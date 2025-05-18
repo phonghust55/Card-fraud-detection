@@ -8,6 +8,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, roc_auc_score, accuracy_score, f1_score
+from neural_network import create_neural_network_pipeline
+from xgboost_model import create_xgboost_pipeline
 
 # Load data
 print("Loading data...")
@@ -42,16 +44,20 @@ def create_pipeline(model):
         ('model', model)                              
     ])
 
-# Instantiate pipelines for each model
-pipeline_dt = create_pipeline(DecisionTreeClassifier(max_depth=6, random_state=42))
-pipeline_rf = create_pipeline(RandomForestClassifier(n_estimators=100, random_state=42))
+# Define pipelines
+pipeline_dt = create_pipeline(DecisionTreeClassifier(random_state=42))
+pipeline_rf = create_pipeline(RandomForestClassifier(random_state=42))
 pipeline_lr = create_pipeline(LogisticRegression(random_state=42))
+pipeline_nn = create_neural_network_pipeline('smote')
+pipeline_xgb = create_xgboost_pipeline('smote')
 
 # Define models to evaluate
 models = [
     ('Decision Tree', pipeline_dt),
     ('Random Forest', pipeline_rf),
-    ('Logistic Regression', pipeline_lr)
+    ('Logistic Regression', pipeline_lr),
+    ('Neural Network', pipeline_nn),
+    ('XGBoost', pipeline_xgb)
 ]
 
 # Store results for comparison

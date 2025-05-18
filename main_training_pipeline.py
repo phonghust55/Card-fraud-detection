@@ -15,6 +15,8 @@ import warnings
 import os
 import joblib
 from utils import evaluate_model # Import the evaluation function
+from neural_network import create_neural_network_pipeline
+from xgboost_model import create_xgboost_pipeline
 
 warnings.filterwarnings('ignore')
 
@@ -96,7 +98,9 @@ models_to_run = {
     'Decision Tree (SMOTE)': create_decision_tree_pipeline('smote'),
     'Decision Tree (Undersampling)': create_decision_tree_pipeline('undersampling'),
     'Random Forest (SMOTE)': create_random_forest_pipeline('smote'),
-    'Logistic Regression (SMOTE)': create_logistic_regression_pipeline('smote')
+    'Logistic Regression (SMOTE)': create_logistic_regression_pipeline('smote'),
+    'Neural Network (SMOTE)': create_neural_network_pipeline('smote'),
+    'XGBoost (SMOTE)': create_xgboost_pipeline('smote')
 }
 
 results = {}
@@ -151,6 +155,22 @@ if results: # ensure results is not empty
         #     {'model__penalty': ['l1'], 'model__solver': ['liblinear', 'saga'], 'model__C': [0.01, 0.1, 1, 10]},
         #     {'model__penalty': ['l2'], 'model__solver': ['liblinear', 'saga'], 'model__C': [0.01, 0.1, 1, 10]},
         # ]
+    elif 'Neural Network' in best_model_name:
+        tuned_model_pipeline = create_neural_network_pipeline('smote' if 'SMOTE' in best_model_name else None)
+        param_grid = {
+            'model__epochs': [5, 10, 15],
+            'model__batch_size': [128, 256, 512],
+            'model__model__units_layer1': [32, 64, 128],
+            'model__model__dropout_rate': [0.2, 0.3, 0.4]
+        }
+    elif 'XGBoost' in best_model_name:
+        tuned_model_pipeline = create_xgboost_pipeline('smote' if 'SMOTE' in best_model_name else None)
+        param_grid = {
+            'model__n_estimators': [50, 100, 200],
+            'model__max_depth': [3, 4, 5],
+            'model__learning_rate': [0.01, 0.1, 0.3],
+            'model__min_child_weight': [1, 3, 5]
+        }
     else:
         print("Could not determine the best model type for hyperparameter tuning or no models were run.")
         tuned_model_pipeline = None

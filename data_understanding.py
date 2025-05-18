@@ -17,7 +17,7 @@ df = pd.read_csv('creditcard.csv')
 # Display basic information
 print("\nDataset Shape:", df.shape)
 print("\nFeature Information:")
-# df.info() can be verbose, print() wraps it for better console output control
+
 import io
 buffer = io.StringIO()
 df.info(buf=buffer)

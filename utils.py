@@ -2,9 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix, roc_curve, roc_auc_score, precision_recall_curve, average_precision_score
-import numpy as np # Added for np.bincount if needed by other parts, though evaluate_model doesn't use it directly
+import numpy as np 
 
-# Ensure the 'plots' directory exists
+
 if not os.path.exists('plots'):
     os.makedirs('plots')
 
@@ -12,16 +12,31 @@ def evaluate_model(model, X_test, y_test, model_name):
     """
     Evaluate model performance with multiple metrics
     """
-    # Make predictions
-    y_pred = model.predict(X_test)
+    # Make predictions - handle Neural Network and XGBoost differently
+    if 'Neural_Network' in model_name:
+        y_pred_proba = model.predict(X_test)
+        y_pred = (y_pred_proba > 0.5).astype(int)
+        y_prob = y_pred_proba.ravel()  # Flatten for ROC curve
+    elif 'XGBoost' in model_name:
+        y_pred = model.predict(X_test)
+        y_prob = model.predict_proba(X_test)[:, 1]
+    else:
+        y_pred = model.predict(X_test)
+        if hasattr(model, "predict_proba"):
+            try:
+                y_prob = model.predict_proba(X_test)[:, 1]
+            except Exception as e:
+                print(f"Error getting probabilities: {str(e)}")
+                y_prob = None
+        else:
+            y_prob = None
     
     # Generate probabilities for ROC AUC
     auc_score = None
     avg_precision = None
     
-    if hasattr(model, "predict_proba"):
+    if y_prob is not None:
         try:
-            y_prob = model.predict_proba(X_test)[:, 1]
             auc_score = roc_auc_score(y_test, y_prob)
             avg_precision = average_precision_score(y_test, y_prob)
             
@@ -64,12 +79,11 @@ def evaluate_model(model, X_test, y_test, model_name):
     plt.close()
     
     # Calculate additional metrics
-    report = classification_report(y_test, y_pred, output_dict=True, zero_division=0) # Added zero_division
+    report = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
     
     print(f"\n=== {model_name} Performance Metrics ===")
     print(f"Accuracy:       {report['accuracy']:.4f}")
     
-    # Check if '1' (fraud class) is in report, handle if not (e.g. if no frauds predicted or actual)
     if '1' in report:
         print(f"Precision (Fraud): {report['1']['precision']:.4f}")
         print(f"Recall (Fraud):    {report['1']['recall']:.4f}")
@@ -77,7 +91,7 @@ def evaluate_model(model, X_test, y_test, model_name):
         precision_val = report['1']['precision']
         recall_val = report['1']['recall']
         f1_val = report['1']['f1-score']
-    else: # Handle cases where the positive class might not be present in predictions
+    else:
         print("Precision (Fraud): N/A (No fraud class in report)")
         print("Recall (Fraud):    N/A (No fraud class in report)")
         print("F1-Score (Fraud):  N/A (No fraud class in report)")
@@ -91,7 +105,7 @@ def evaluate_model(model, X_test, y_test, model_name):
         print(f"Avg Precision:  {avg_precision:.4f}")
     
     print("\n=== Classification Report ===")
-    print(classification_report(y_test, y_pred, digits=4, zero_division=0)) # Added zero_division
+    print(classification_report(y_test, y_pred, digits=4, zero_division=0))
     
     return {
         'accuracy': report['accuracy'],
